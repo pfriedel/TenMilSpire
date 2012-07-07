@@ -29,7 +29,6 @@ uint8_t led_grid_next[12] = {
 };
 
 void setup() {
-  pinMode( 13, INPUT );
   randomSeed(analogRead(2));
 }
 
