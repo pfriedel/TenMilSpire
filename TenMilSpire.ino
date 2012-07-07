@@ -1,9 +1,16 @@
-#define LINE_A 2 //Pin 5 (PB0) on ATtiny85
-#define LINE_B 3 //Pin 6 (PB1) on ATtiny85
-#define LINE_C 4 //Pin 7 (PB2) on ATtiny85
-#define LINE_D 5 //Pin 2 (PB3) on ATtiny85
+// Tiny85 versioned - ATmega requires these defines to be redone as well as the
+// DDRB/PORTB calls later on.
 
-#define FRAME_DELAY 3000
+#define LINE_A 0 //Pin 5 on ATtiny85
+#define LINE_B 1 //Pin 6 on ATtiny85
+#define LINE_C 3 //Pin 2 on ATtiny85
+#define LINE_D 4 //Pin 3 on ATtiny85
+
+// ATmega is like so, although using 8,9,10 & 11 would keep them all on port B
+// #define LINE_A 2 
+// #define LINE_B 3 
+// #define LINE_C 4 
+// #define LINE_D 5 
 
 #include <avr/io.h>
 
@@ -23,8 +30,7 @@ uint8_t led_grid_next[12] = {
 
 void setup() {
   pinMode( 13, INPUT );
-  //  Serial.begin(115200);
-  randomSeed(analogRead(A0));
+  randomSeed(analogRead(2));
 }
 
 void loop() {
@@ -82,7 +88,7 @@ void loop() {
       for(uint16_t colorshift=0; colorshift<360; colorshift++) {
 	for(uint8_t led = 0; led<4; led++) {
 	  uint16_t hue = ((led) * 360/(width)+colorshift)%360;
-	  setLedColorHSV(led,hue,1,.1);
+	  setLedColorHSV(led,hue,1,1);
 	}
 	draw_for_time(10);
       }
@@ -218,13 +224,13 @@ const uint8_t led_out[12] = {
 
 void light_led(uint8_t led_num) { //led_num must be from 0 to 19
   //DDRD is the ports in use on an ATmega328, DDRB on an ATtiny85
-  DDRD = led_dir[led_num];
-  PORTD = led_out[led_num];
+  DDRB = led_dir[led_num];
+  PORTB = led_out[led_num];
 }
 
 void leds_off() {
-  DDRD = 0;
-  PORTD = 0;	
+  DDRB = 0;
+  PORTB = 0;	
 }
 
 void draw_frame(void){
