@@ -151,7 +151,7 @@ void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
   //  int green=constrain((int)100*g,0,100);
   //  int blue=constrain((int)100*b,0,100);
   
-  set_led_rgb(p,constrain((int)188*r,0,100),constrain((int)100*g,0,100),constrain((int)100*b,0,100));
+  set_led_rgb(p,constrain((int)100*r,0,100),constrain((int)100*g,0,100),constrain((int)100*b,0,100));
 }
 
 /* Args:
@@ -162,7 +162,7 @@ void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
 */
 void set_led_rgb (uint8_t p, uint8_t r, uint8_t g, uint8_t b) {
   // red usually seems to need to be attenuated a bit.
-  led_grid[p] = (r*.8);
+  led_grid[p] = r;
   led_grid[p+4] = g;
   led_grid[p+8] = b;
 }
@@ -171,7 +171,7 @@ void set_led_rgb (uint8_t p, uint8_t r, uint8_t g, uint8_t b) {
    Same as set_led_rgb, except the change affects the next frame, and not in immediate mode
 */
 void set_led_rgb_next (uint8_t p, uint8_t r, uint8_t g, uint8_t b) {
-  led_grid_next[p] = (r*.8);
+  led_grid_next[p] = r;
   led_grid_next[p+4] = g;
   led_grid_next[p+8] = b;
 }
