@@ -24,88 +24,70 @@ uint8_t led_grid_next[12] = {
 void setup() {
   pinMode( 13, INPUT );
   //  Serial.begin(115200);
+  randomSeed(analogRead(A0));
 }
 
 void loop() {
-
-//  uint8_t led;
-//  for(led=0;led<=11;led++) {
-//    light_led(led);
-//    delay(100);
-//  }
-//
-//  clear_grid();
-//  // Draw all reds
-//  for ( led=0; led<4; led++ ) { led_grid_next[led] = 100; }
-//  fade_to_next_frame();
-//  draw_for_time(100);
-//
-//  // draw all yellow
-//  for ( led=4; led<8; led++ ) { led_grid_next[led] = 100; }
-//  fade_to_next_frame();
-//  draw_for_time(100);
-//
-//  clear_grid();
-//  // draw all greens
-//  for ( led=4; led<8; led++ ) { led_grid_next[led] = 100; }
-//  fade_to_next_frame();
-//  draw_for_time(100);
-//
-//  // draw all cyans
-//  for ( led=8; led<12; led++ ) { led_grid_next[led] = 100; }
-//  fade_to_next_frame();
-//  draw_for_time(100);
-//
-//  clear_grid();
-//  // draw all blues
-//  for ( led=8; led<12; led++ ) { led_grid_next[led] = 100; }
-//  fade_to_next_frame();
-//  draw_for_time(100);
-//
-//  //draw all purples
-//  for ( led=0; led<4; led++ ) { led_grid_next[led] = 100; }
-//  fade_to_next_frame();
-//  draw_for_time(100);
-//
-//  // draw all white
-//  for ( led=4; led<8; led++ ) { led_grid_next[led] = 100; }
-//  fade_to_next_frame();
-//  draw_for_time(100);
-
-/// RGB bouncy.  Not very good.
-//  Serial.println("-----");
-//  for(int8_t x = 0; x<=100; x++) {
-//    set_led_rgb(0,x,75,25);
-//    set_led_rgb(1,75,25,x);
-//    set_led_rgb(2,25,x,75);
-//    set_led_rgb(3,x,x,x);
-//
-//    draw_for_time(50);
-//    Serial.println(x);
-//  }
-//
-//  for(int8_t x = 100; x>=0; x--) {
-//    set_led_rgb(0,x,75,25);
-//    set_led_rgb(1,75,25,x);
-//    set_led_rgb(2,25,x,75);
-//    set_led_rgb(3,x,x,x);
-//    
-//    draw_for_time(50);
-//    Serial.println(x);
-//  }
-
-// the HSV hotness.
-// how wide should the "virtual" rainbow be?  smaller numbers mean the LEDs have more variability, larger numbers mean closer hues.
-#define RAINBOW_WIDTH 10
-
-  for(uint8_t swirlcount = 0; swirlcount < 10; swirlcount++) { 
-    for(uint16_t colorshift=0; colorshift<360; colorshift++) {
-      for(uint8_t led = 0; led<4; led++) {
-	uint16_t hue = ((led) * 360/(RAINBOW_WIDTH)+colorshift)%360;
-	setLedColorHSV(led,hue,1,.1);
+  switch(random(2)) {
+  case 0:
+    while(1) {
+      uint8_t led;
+      for(led=0;led<=11;led++) {
+	light_led(led);
+	delay(100);
       }
-      draw_for_time(10);
+      
+      clear_grid();
+      // Draw all reds
+      for ( led=0; led<4; led++ ) { led_grid_next[led] = 100; }
+      fade_to_next_frame();
+      draw_for_time(100);
+      
+      // draw all yellow
+      for ( led=4; led<8; led++ ) { led_grid_next[led] = 100; }
+      fade_to_next_frame();
+      draw_for_time(100);
+      
+      clear_grid();
+      // draw all greens
+      for ( led=4; led<8; led++ ) { led_grid_next[led] = 100; }
+      fade_to_next_frame();
+      draw_for_time(100);
+      
+      // draw all cyans
+      for ( led=8; led<12; led++ ) { led_grid_next[led] = 100; }
+      fade_to_next_frame();
+      draw_for_time(100);
+      
+      clear_grid();
+      // draw all blues
+      for ( led=8; led<12; led++ ) { led_grid_next[led] = 100; }
+      fade_to_next_frame();
+      draw_for_time(100);
+      
+      //draw all purples
+      for ( led=0; led<4; led++ ) { led_grid_next[led] = 100; }
+      fade_to_next_frame();
+      draw_for_time(100);
+      
+      // draw all white
+      for ( led=4; led<8; led++ ) { led_grid_next[led] = 100; }
+      fade_to_next_frame();
+      draw_for_time(100);
     }
+    break;
+  case 1:
+    uint8_t width = random(5,20);
+    while(1) {
+      for(uint16_t colorshift=0; colorshift<360; colorshift++) {
+	for(uint8_t led = 0; led<4; led++) {
+	  uint16_t hue = ((led) * 360/(width)+colorshift)%360;
+	  setLedColorHSV(led,hue,1,.1);
+	}
+	draw_for_time(10);
+      }
+    }
+    break;
   }
 }
 
@@ -116,7 +98,7 @@ void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
   float g=0; 
   float b=0;
 
-  float hf=h/60.0;
+  //  float hf=h/60.0;
 
   uint8_t i=(int)floor(h/60.0);
   float f = h/60.0 - i;
