@@ -30,3 +30,12 @@ Pin 8: VCC
 
 It runs nicely off of 3xAA batteries.  Appropriate resistors on all the common
 pins if you feel they're necessary.  (I do, some people don't.)
+
+------------------------------------------------------------------------
+
+BOM: (prices are volatile)
+
+1x MCU: http://www.dipmicro.com/store/ATTINY85-20PU ($1.56)
+4x 10mm RGB Common Anode LEDs: http://www.dipmicro.com/store/LED10AD ($2)
+1x 3xAA Battery holder: http://www.dipmicro.com/store/BH2465 ($3.21)
+4x resistors - mine are 1ohm! But 47 is probably more reasonable
