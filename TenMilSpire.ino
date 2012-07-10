@@ -13,8 +13,11 @@
 // #define LINE_D 5 
 
 #include <avr/io.h>
+#include <EEPROM.h>
 
 //#define F_CPU 16000000UL
+
+uint8_t mode = 0;
 
 uint8_t led_grid[12] = {
   000 , 000 , 000 , 000 , // R
@@ -33,8 +36,8 @@ void setup() {
 }
 
 void loop() {
-  switch(random(2)) {
-  case 0:
+  switch(random(4)) {
+  case 0: // all primary colors, no subtle mixing
     while(1) {
       uint8_t led;
       for(led=0;led<=11;led++) {
@@ -81,21 +84,62 @@ void loop() {
       draw_for_time(100);
     }
     break;
-  case 1:
-    uint8_t width = random(5,20);
-    while(1) {
-      for(uint16_t colorshift=0; colorshift<360; colorshift++) {
-	for(uint8_t led = 0; led<4; led++) {
-	  uint16_t hue = ((led) * 360/(width)+colorshift)%360;
-	  setLedColorHSV(led,hue,1,1);
+  case 1:  // Downward shifting rainbow
+    {
+      uint8_t width = random(5,20);
+      while(1) {
+	for(int colorshift=0; colorshift<=360; colorshift++) {
+	  for(uint8_t led = 0; led<4; led++) {
+	    int hue = ((led) * 360/(width)+colorshift)%360;
+	    setLedColorHSV(led,hue,1,1);
+	  }
+	  draw_for_time(10);
 	}
-	draw_for_time(10);
+      }
+      break;
+    }
+  case 2: // upward shifting rainbow
+    {
+      uint8_t width = random(5,20);
+      while(1) {
+	for(int colorshift=360; colorshift>=0; colorshift--) {
+	  for(uint8_t led = 0; led<4; led++) {
+	    int hue = ((led) * 360/(width)+colorshift)%360;
+	    setLedColorHSV(led,hue,1,1);
+	  }
+	  draw_for_time(10);
+	}
+      }
+      break;
+    }
+  case 3: // cop mode
+    while(1) {
+      for(uint8_t y = 0; y<=1; y++) {
+	set_led_rgb(0,100,0,0);
+	set_led_rgb(1,0,0,100);
+	set_led_rgb(2,100,0,0);
+	set_led_rgb(3,0,0,100);
+	draw_for_time(100);
+	for(uint8_t x= 0; x<=3; x++) {
+	  set_led_rgb(x,0,0,0);
+	}
+	draw_for_time(25);
+      }
+      for(uint8_t y = 0; y<=1; y++) {
+	set_led_rgb(0,0,0,100);
+	set_led_rgb(1,100,0,0);
+	set_led_rgb(2,0,0,100);
+	set_led_rgb(3,100,0,0);
+	draw_for_time(100);
+	for(uint8_t x= 0; x<=3; x++) {
+	  set_led_rgb(x,0,0,0);
+	}
+	draw_for_time(25);
       }
     }
     break;
   }
 }
-
 
 void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
   //this is the algorithm to convert from HSV to RGB
@@ -143,6 +187,11 @@ void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
       g = pv;
       b = qv;
       break;
+    case 6:
+      r = v;
+      g = pv;
+      b = qv;
+      break;  
     }
 
   // commented out since they don't exist longer than necessary to pass off to set_led_rgb, so why bother?
@@ -151,7 +200,7 @@ void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
   //  int green=constrain((int)100*g,0,100);
   //  int blue=constrain((int)100*b,0,100);
   
-  set_led_rgb(p,constrain((int)100*r,0,100),constrain((int)100*g,0,100),constrain((int)100*b,0,100));
+  set_led_rgb(p,constrain((int)200*r,0,100),constrain((int)100*g,0,100),constrain((int)100*b,0,100));
 }
 
 /* Args:
@@ -256,5 +305,33 @@ void fade_to_next_frame(void){
     // has a chance to be seen.
     draw_frame();
     if( changes == 0 ){break;}
+  }
+}
+
+void EEReadSettings (void) {  // TODO: Detect ANY bad values, not just 255.
+
+  uint8_t detectBad = 0;
+  uint8_t value = 255;
+
+  value = EEPROM.read(0);
+  if (value > 8)
+    detectBad = 1;
+  else
+    mode = value;  // mode has maximum possible value of 3
+
+  if (detectBad) {
+    mode = 0;
+  }
+}
+
+void EESaveSettings (void){
+  //EEPROM.write(Addr, Value);
+
+  // Careful if you use  this function: EEPROM has a limited number of write
+  // cycles in its life.  Good for human-operated buttons, bad for automation.
+
+  byte value = EEPROM.read(0);
+  if(value != mode) {
+    EEPROM.write(0, mode);
   }
 }
