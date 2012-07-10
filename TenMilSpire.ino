@@ -133,11 +133,11 @@ void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
       g = pv;
       b = qv;
       break;
-//    case 6:
-//      r = v;
-//      g = pv;
-//      b = qv;
-//      break;  
+    case 6:
+      r = v;
+      g = pv;
+      b = qv;
+      break;  
     }
 
   // commented out since they don't exist longer than necessary to pass off to set_led_rgb, so why bother?
