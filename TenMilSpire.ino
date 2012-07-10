@@ -13,7 +13,7 @@
 // #define LINE_D 5 
 
 #include <avr/io.h>
-#include <EEPROM.h>
+//#include <EEPROM.h>
 
 //#define F_CPU 16000000UL
 
@@ -33,62 +33,24 @@ uint8_t led_grid_next[12] = {
 
 void setup() {
   randomSeed(analogRead(2));
+  uint8_t led;
+  // Light all LEDs in sequence to confirm they're all still working.  
+  for(led=0;led<=11;led++) { 
+    light_led(led);
+    delay(50);
+  }
 }
 
 void loop() {
-  switch(random(4)) {
-  case 0: // all primary colors, no subtle mixing
-    while(1) {
-      uint8_t led;
-      for(led=0;led<=11;led++) {
-	light_led(led);
-	delay(100);
-      }
-      
-      clear_grid();
-      // Draw all reds
-      for ( led=0; led<4; led++ ) { led_grid_next[led] = 100; }
-      fade_to_next_frame();
-      draw_for_time(100);
-      
-      // draw all yellow
-      for ( led=4; led<8; led++ ) { led_grid_next[led] = 100; }
-      fade_to_next_frame();
-      draw_for_time(100);
-      
-      clear_grid();
-      // draw all greens
-      for ( led=4; led<8; led++ ) { led_grid_next[led] = 100; }
-      fade_to_next_frame();
-      draw_for_time(100);
-      
-      // draw all cyans
-      for ( led=8; led<12; led++ ) { led_grid_next[led] = 100; }
-      fade_to_next_frame();
-      draw_for_time(100);
-      
-      clear_grid();
-      // draw all blues
-      for ( led=8; led<12; led++ ) { led_grid_next[led] = 100; }
-      fade_to_next_frame();
-      draw_for_time(100);
-      
-      //draw all purples
-      for ( led=0; led<4; led++ ) { led_grid_next[led] = 100; }
-      fade_to_next_frame();
-      draw_for_time(100);
-      
-      // draw all white
-      for ( led=4; led<8; led++ ) { led_grid_next[led] = 100; }
-      fade_to_next_frame();
-      draw_for_time(100);
-    }
-    break;
-  case 1:  // Downward shifting rainbow
+  //  unsigned long now = millis();
+  switch(random(3)) {
+  case 0:  // Downward shifting rainbow
     {
-      uint8_t width = random(5,20);
+      uint8_t width = random(10,20);
       while(1) {
-	for(int colorshift=0; colorshift<=360; colorshift++) {
+	//	if(millis() > now + 5000) { break; }
+
+	for(int colorshift=0; colorshift<360; colorshift++) {
 	  for(uint8_t led = 0; led<4; led++) {
 	    int hue = ((led) * 360/(width)+colorshift)%360;
 	    setLedColorHSV(led,hue,1,1);
@@ -98,11 +60,13 @@ void loop() {
       }
       break;
     }
-  case 2: // upward shifting rainbow
+  case 1: // upward shifting rainbow
     {
-      uint8_t width = random(5,20);
+      uint8_t width = random(10,20);
       while(1) {
-	for(int colorshift=360; colorshift>=0; colorshift--) {
+	//	if(millis() > now + 5000) { break; }
+
+	for(int colorshift=359; colorshift>=0; colorshift--) {
 	  for(uint8_t led = 0; led<4; led++) {
 	    int hue = ((led) * 360/(width)+colorshift)%360;
 	    setLedColorHSV(led,hue,1,1);
@@ -112,30 +76,12 @@ void loop() {
       }
       break;
     }
-  case 3: // cop mode
+  case 2: // randoms in random places
     while(1) {
-      for(uint8_t y = 0; y<=1; y++) {
-	set_led_rgb(0,100,0,0);
-	set_led_rgb(1,0,0,100);
-	set_led_rgb(2,100,0,0);
-	set_led_rgb(3,0,0,100);
-	draw_for_time(100);
-	for(uint8_t x= 0; x<=3; x++) {
-	  set_led_rgb(x,0,0,0);
-	}
-	draw_for_time(25);
-      }
-      for(uint8_t y = 0; y<=1; y++) {
-	set_led_rgb(0,0,0,100);
-	set_led_rgb(1,100,0,0);
-	set_led_rgb(2,0,0,100);
-	set_led_rgb(3,100,0,0);
-	draw_for_time(100);
-	for(uint8_t x= 0; x<=3; x++) {
-	  set_led_rgb(x,0,0,0);
-	}
-	draw_for_time(25);
-      }
+      //      if(millis() > now + 5000) { break; }
+
+      setLedColorHSV(random(4),random(360), 1,1);
+      draw_for_time(100);
     }
     break;
   }
@@ -210,7 +156,9 @@ void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
    blue value - 0-100
 */
 void set_led_rgb (uint8_t p, uint8_t r, uint8_t g, uint8_t b) {
-  // red usually seems to need to be attenuated a bit.
+//  r = map(r,0,100,0,90);
+//  g = map(g,0,100,0,70);
+//  b = map(b,0,100,0,100);
   led_grid[p] = r;
   led_grid[p+4] = g;
   led_grid[p+8] = b;
@@ -220,6 +168,9 @@ void set_led_rgb (uint8_t p, uint8_t r, uint8_t g, uint8_t b) {
    Same as set_led_rgb, except the change affects the next frame, and not in immediate mode
 */
 void set_led_rgb_next (uint8_t p, uint8_t r, uint8_t g, uint8_t b) {
+//  r = map(r,0,100,0,90);
+//  g = map(g,0,100,0,70);
+//  b = map(b,0,100,0,100);
   led_grid_next[p] = r;
   led_grid_next[p+4] = g;
   led_grid_next[p+8] = b;
@@ -307,31 +258,31 @@ void fade_to_next_frame(void){
     if( changes == 0 ){break;}
   }
 }
-
-void EEReadSettings (void) {  // TODO: Detect ANY bad values, not just 255.
-
-  uint8_t detectBad = 0;
-  uint8_t value = 255;
-
-  value = EEPROM.read(0);
-  if (value > 8)
-    detectBad = 1;
-  else
-    mode = value;  // mode has maximum possible value of 3
-
-  if (detectBad) {
-    mode = 0;
-  }
-}
-
-void EESaveSettings (void){
-  //EEPROM.write(Addr, Value);
-
-  // Careful if you use  this function: EEPROM has a limited number of write
-  // cycles in its life.  Good for human-operated buttons, bad for automation.
-
-  byte value = EEPROM.read(0);
-  if(value != mode) {
-    EEPROM.write(0, mode);
-  }
-}
+//
+//void EEReadSettings (void) {  // TODO: Detect ANY bad values, not just 255.
+//
+//  uint8_t detectBad = 0;
+//  uint8_t value = 255;
+//
+//  value = EEPROM.read(0);
+//  if (value > 8)
+//    detectBad = 1;
+//  else
+//    mode = value;  // mode has maximum possible value of 3
+//
+//  if (detectBad) {
+//    mode = 0;
+//  }
+//}
+//
+//void EESaveSettings (void){
+//  //EEPROM.write(Addr, Value);
+//
+//  // Careful if you use  this function: EEPROM has a limited number of write
+//  // cycles in its life.  Good for human-operated buttons, bad for automation.
+//
+//  byte value = EEPROM.read(0);
+//  if(value != mode) {
+//    EEPROM.write(0, mode);
+//  }
+//}
