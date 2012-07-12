@@ -41,7 +41,7 @@ void loop() {
       draw_for_time(100);
     }
     break;
-    // downward flowing rainbow
+    // downward flowing rainbow inspired from the shiftPWM library example
   case 1:
     {
       uint8_t width = random(5,20);
@@ -61,6 +61,7 @@ void loop() {
 
 
 void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
+  // Lightly adapted from http://eduardofv.com/read_post/179-Arduino-RGB-LED-HSV-Color-Wheel-
   //this is the algorithm to convert from HSV to RGB
   float r=0; 
   float g=0; 
