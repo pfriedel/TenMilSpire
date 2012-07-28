@@ -13,6 +13,11 @@
 // #define LINE_D 5 
 
 #include <avr/io.h>
+#include <EEPROM.h>
+
+#define MAX_MODE 1
+
+byte last_mode;
 
 //#define F_CPU 16000000UL
 
@@ -30,10 +35,16 @@ uint8_t led_grid_next[12] = {
 
 void setup() {
   randomSeed(analogRead(2));
+  EEReadSettings();
+  last_mode++;
+  if(last_mode > MAX_MODE) {
+    last_mode = 0;
+  }
+  EESaveSettings();
 }
 
 void loop() {
-  switch(random(2)) {
+  switch(last_mode) {
     // led test
   case 0:
     while(1) {
@@ -222,3 +233,37 @@ void fade_to_next_frame(void){
     if( changes == 0 ){break;}
   }
 }
+
+void EEReadSettings (void) {  // TODO: Detect ANY bad values, not just 255.
+  
+  byte detectBad = 0;
+  byte value = 255;
+  
+  value = EEPROM.read(0);
+  if (value > MAX_MODE)
+    detectBad = 1;
+  else
+    last_mode = value;  // MainBright has maximum possible value of 8.
+  
+  if (detectBad) {
+    last_mode = 1; // I prefer the rainbow effect.
+  }
+}
+
+void EESaveSettings (void){
+  //EEPROM.write(Addr, Value);
+  
+  // Careful if you use  this function: EEPROM has a limited number of write
+  // cycles in its life.  Good for human-operated buttons, bad for automation.
+  
+  byte value = EEPROM.read(0);
+
+  if(value != last_mode) {
+    EEPROM.write(0, last_mode);
+    //   Serial.println("eesave"); 
+  }
+  else {
+    //  Serial.println("eenosave"); 
+  }
+}
+
