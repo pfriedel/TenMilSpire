@@ -15,7 +15,7 @@
 #include <avr/io.h>
 #include <EEPROM.h>
 
-#define MAX_MODE 1
+#define MAX_MODE 2
 
 byte last_mode;
 
@@ -44,25 +44,50 @@ void setup() {
 }
 
 void loop() {
+  // indicate which mode we're entering
+  light_led(last_mode);
+  delay(500);
+  leds_off();
+  delay(250);
+
+  // and go into the modes
+
   switch(last_mode) {
+
     // led test
   case 0:
     while(1) {
       setLedColorHSV(random(4),random(360), 1, 1);
-      draw_for_time(100);
+      draw_for_time(1000);
     }
     break;
+    
     // downward flowing rainbow inspired from the shiftPWM library example
   case 1:
     {
-      uint8_t width = random(5,20);
+      uint8_t width = random(16,20);
       while(1) {
 	for(uint16_t colorshift=0; colorshift<360; colorshift++) {
 	  for(uint8_t led = 0; led<4; led++) {
 	    uint16_t hue = ((led) * 360/(width)+colorshift)%360;
 	    setLedColorHSV(led,hue,1,1);
 	  }
-	  draw_for_time(10);
+	  draw_for_time(30);
+	}
+      }
+      break;
+    }
+    // upward flowing rainbow
+  case 2:
+    {
+      uint8_t width = random(16,20);
+      while(1) {
+	for(uint16_t colorshift=360; colorshift>=0; colorshift--) {
+	  for(uint8_t led = 0; led<4; led++) {
+	    uint16_t hue = ((led) * 360/(width)+colorshift)%360;
+	    setLedColorHSV(led,hue,1,1);
+	  }
+	  draw_for_time(30);
 	}
       }
       break;
