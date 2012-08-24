@@ -15,7 +15,7 @@
 #include <avr/io.h>
 #include <EEPROM.h>
 
-#define MAX_MODE 2
+#define MAX_MODE 3
 
 byte last_mode;
 
@@ -53,7 +53,6 @@ void loop() {
   // and go into the modes
 
   switch(last_mode) {
-
     // led test
   case 0:
     while(1) {
@@ -61,37 +60,57 @@ void loop() {
       draw_for_time(1000);
     }
     break;
-    
     // downward flowing rainbow inspired from the shiftPWM library example
-  case 1:
-    {
-      uint8_t width = random(16,20);
-      while(1) {
-	for(uint16_t colorshift=0; colorshift<360; colorshift++) {
-	  for(uint8_t led = 0; led<4; led++) {
-	    uint16_t hue = ((led) * 360/(width)+colorshift)%360;
-	    setLedColorHSV(led,hue,1,1);
-	  }
-	  draw_for_time(30);
+  case 1: {
+    uint8_t width = random(16,20);
+    while(1) {
+      for(uint16_t colorshift=0; colorshift<360; colorshift++) {
+	for(uint8_t led = 0; led<4; led++) {
+	  uint16_t hue = ((led) * 360/(width)+colorshift)%360;
+	  setLedColorHSV(led,hue,1,1);
 	}
+	draw_for_time(30);
       }
-      break;
     }
+    break;
+  }
     // upward flowing rainbow
-  case 2:
-    {
-      uint8_t width = random(16,20);
-      while(1) {
-	for(uint16_t colorshift=360; colorshift>=0; colorshift--) {
-	  for(uint8_t led = 0; led<4; led++) {
-	    uint16_t hue = ((led) * 360/(width)+colorshift)%360;
-	    setLedColorHSV(led,hue,1,1);
-	  }
-	  draw_for_time(30);
+  case 2: {
+    uint8_t width = random(16,20);
+    while(1) {
+      for(uint16_t colorshift=360; colorshift>=0; colorshift--) {
+	for(uint8_t led = 0; led<4; led++) {
+	  uint16_t hue = ((led) * 360/(width)+colorshift)%360;
+	  setLedColorHSV(led,hue,1,1);
+	}
+	draw_for_time(30);
+      }
+    }
+    break;
+  }
+    // Downward flowing single color
+  case 3: {
+    uint16_t hue = random(360); // initial color
+    int led_val[4] = {1,9,17,25}; // some initial distances
+    int led_dir[4] = {1,1,1,1}; // everything is initially going towards higher brightnesses
+    while(1) {
+      for(uint8_t led = 0; led<4; led++) {
+	setLedColorHSV(led,hue,1,led_val[led]*.01);
+	// if the current value for the current LED is about to exceed the top or the bottom, invert that LED's direction
+	if((led_val[led] >= 99) or (led_val[led] <= 0)) { 
+	  led_dir[led] = !led_dir[led]; 
+	}
+	if(led_dir[led] == 1) { 
+	  led_val[led]++; 
+	}
+	else { 
+	  led_val[led]--; 
 	}
       }
-      break;
+      draw_for_time(30);
     }
+    break;
+  }
   }
 }
 
@@ -102,7 +121,7 @@ void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
   float r=0; 
   float g=0; 
   float b=0;
-
+  
   //  float hf=h/60.0;
 
   uint8_t i=(int)floor(h/60.0);
@@ -285,10 +304,6 @@ void EESaveSettings (void){
 
   if(value != last_mode) {
     EEPROM.write(0, last_mode);
-    //   Serial.println("eesave"); 
-  }
-  else {
-    //  Serial.println("eenosave"); 
   }
 }
 
