@@ -27,19 +27,23 @@ uint8_t led_grid[12] = {
   000 , 000 , 000 , 000  // B
 };
 
-uint8_t led_grid_next[12] = {
-  000 , 000 , 000 , 000 ,  // R
-  000 , 000 , 000 , 000 ,  // G
-  000 , 000 , 000 , 000 // B
-};
-
 void setup() {
-  randomSeed(analogRead(2));
+  // Try and set the random seed more randomly.  Alternate solutions involve using the eeprom and writing the last seed there.
+  uint16_t seed=0;
+  uint8_t count=32;
+  while (--count) {
+    seed = (seed<<1) | (analogRead(1)&1);
+  }
+  randomSeed(seed);
+
+  // Read the last mode out of the eeprom.
   EEReadSettings();
   last_mode++;
   if(last_mode > MAX_MODE) {
     last_mode = 0;
   }
+
+  // save whichever mode we're using now back to eeprom.
   EESaveSettings();
 }
 
@@ -53,7 +57,7 @@ void loop() {
   // and go into the modes
 
   switch(last_mode) {
-    // led test
+    // random colors on random LEDs.
   case 0:
     while(1) {
       setLedColorHSV(random(4),random(360), 1, 1);
@@ -91,8 +95,8 @@ void loop() {
     // Downward flowing single color
   case 3: {
     uint16_t hue = random(360); // initial color
-    int led_val[4] = {1,9,17,25}; // some initial distances
-    int led_dir[4] = {1,1,1,1}; // everything is initially going towards higher brightnesses
+    uint8_t led_val[4] = {1,9,17,25}; // some initial distances
+    bool led_dir[4] = {1,1,1,1}; // everything is initially going towards higher brightnesses
     while(1) {
       for(uint8_t led = 0; led<4; led++) {
 	setLedColorHSV(led,hue,1,led_val[led]*.01);
@@ -121,8 +125,6 @@ void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
   float r=0; 
   float g=0; 
   float b=0;
-  
-  //  float hf=h/60.0;
 
   uint8_t i=(int)floor(h/60.0);
   float f = h/60.0 - i;
@@ -164,12 +166,6 @@ void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
       break;
     }
 
-  // commented out since they don't exist longer than necessary to pass off to set_led_rgb, so why bother?
-  //set each component to a integer value between 0 and 100
-  //  int red=constrain((int)100*r,0,100);
-  //  int green=constrain((int)100*g,0,100);
-  //  int blue=constrain((int)100*b,0,100);
-  
   set_led_rgb(p,constrain((int)100*r,0,100),constrain((int)100*g,0,100),constrain((int)100*b,0,100));
 }
 
@@ -184,20 +180,6 @@ void set_led_rgb (uint8_t p, uint8_t r, uint8_t g, uint8_t b) {
   led_grid[p] = r;
   led_grid[p+4] = g;
   led_grid[p+8] = b;
-}
-
-/* Args:
-   Same as set_led_rgb, except the change affects the next frame, and not in immediate mode
-*/
-void set_led_rgb_next (uint8_t p, uint8_t r, uint8_t g, uint8_t b) {
-  led_grid_next[p] = r;
-  led_grid_next[p+4] = g;
-  led_grid_next[p+8] = b;
-}
-
-// Clears led_grid_next
-void clear_grid () {
-  for (uint8_t led = 0; led<12; led++) { led_grid_next[led]=0; }
 }
 
 // runs draw_frame a supplied number of times.
@@ -259,22 +241,6 @@ void draw_frame(void){
     bright_val = led_grid[led];
     for( b=0 ; b < bright_val ; b+=1)  { light_led(led); } //delay while on
     for( b=bright_val ; b<100 ; b+=1)  { leds_off(); } //delay while off
-  }
-}
-
-void fade_to_next_frame(void){
-  uint8_t led, changes;
-  while(1){
-    changes = 0;
-    for ( led=0; led<12; led++ ) {
-      if( led_grid[led] < led_grid_next[led] ){ led_grid[led] = (led_grid[led]+1); changes++; }
-      if( led_grid[led] > led_grid_next[led] ){ led_grid[led] = (led_grid[led]-1); changes++; }
-    }
-
-    // I suspect this should be replaced with draw_for_time so that the fading
-    // has a chance to be seen.
-    draw_frame();
-    if( changes == 0 ){break;}
   }
 }
 
