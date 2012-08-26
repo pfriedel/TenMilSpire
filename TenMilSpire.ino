@@ -15,7 +15,7 @@
 #include <avr/io.h>
 #include <EEPROM.h>
 
-#define MAX_MODE 3
+#define MAX_MODE 4
 #define DRAW_TIME 5
 
 byte last_mode;
@@ -122,6 +122,28 @@ void loop() {
     }
     break;
   }
+    // One LED at a time, PWM up to full brightness and back down again.
+  case 4: {
+    uint8_t led_bright = 1;
+    bool led_dir = 1;
+    uint8_t led = 0;
+    while(1) {
+      
+      // flip the direction when the LED is at full brightness or no brightness.
+      if((led_bright >= 100) or (led_bright <= 0)) { led_dir = !led_dir; } 
+      
+      // increment or decrement the brightness
+      if(led_dir == 1) { led_bright++; }
+      else { led_bright--; }
+      
+      // if the decrement will turn off the current LED, switch to the next LED
+      if( led_bright <= 0 ) { led_grid[led] = 0; led++; }
+
+      // And if that change pushes the current LED off the end of the spire, reset to the first LED.
+      if( led >=12) { led = 0; }
+      
+      led_grid[led] = led_bright;
+      draw_for_time(DRAW_TIME);
     }
     break;
   }
