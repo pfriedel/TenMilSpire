@@ -16,6 +16,7 @@
 #include <EEPROM.h>
 
 #define MAX_MODE 3
+#define DRAW_TIME 5
 
 byte last_mode;
 
@@ -65,6 +66,7 @@ void loop() {
     }
     break;
     // downward flowing rainbow inspired from the shiftPWM library example
+    // this walks through hue space at a constant saturation and brightness
   case 1: {
     uint8_t width = random(16,20);
     while(1) {
@@ -72,8 +74,8 @@ void loop() {
 	for(uint8_t led = 0; led<4; led++) {
 	  uint16_t hue = ((led) * 360/(width)+colorshift)%360;
 	  setLedColorHSV(led,hue,1,1);
+	  draw_for_time(DRAW_TIME);
 	}
-	draw_for_time(30);
       }
     }
     break;
@@ -86,13 +88,14 @@ void loop() {
 	for(uint8_t led = 0; led<4; led++) {
 	  uint16_t hue = ((led) * 360/(width)+colorshift)%360;
 	  setLedColorHSV(led,hue,1,1);
+	  draw_for_time(DRAW_TIME);
 	}
-	draw_for_time(30);
       }
     }
     break;
   }
-    // Downward flowing single color
+    // Walk through brightness values across all hues.
+    // this walks through brightnesses, slowly shifting hues.
   case 3: {
     uint16_t hue = random(360); // initial color
     uint8_t led_val[4] = {1,9,17,25}; // some initial distances
@@ -100,9 +103,14 @@ void loop() {
     while(1) {
       for(uint8_t led = 0; led<4; led++) {
 	setLedColorHSV(led,hue,1,led_val[led]*.01);
+	draw_for_time(DRAW_TIME);
 	// if the current value for the current LED is about to exceed the top or the bottom, invert that LED's direction
 	if((led_val[led] >= 99) or (led_val[led] <= 0)) { 
 	  led_dir[led] = !led_dir[led]; 
+	  hue++; // actually increments hue by the number of LEDs (4) as each LED goes through 99 or 0, but 360 is a loooong way from here.
+	  if(hue >= 360) { 
+	    hue = 0;
+	  }
 	}
 	if(led_dir[led] == 1) { 
 	  led_val[led]++; 
@@ -111,7 +119,9 @@ void loop() {
 	  led_val[led]--; 
 	}
       }
-      draw_for_time(30);
+    }
+    break;
+  }
     }
     break;
   }
