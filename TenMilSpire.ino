@@ -2,16 +2,10 @@
 // DDRB/PORTB calls later on.
 
 // Because I tend to forget - the number here is the Port B pin in use.  Pin 5 is PB0, Pin 6 is PB1, etc.
-#define LINE_A 0 //Pin 5 on ATtiny85
-#define LINE_B 1 //Pin 6 on ATtiny85
-#define LINE_C 3 //Pin 2 on ATtiny85
-#define LINE_D 4 //Pin 3 on ATtiny85
-
-// ATmega is like so, although using 8,9,10 & 11 would keep them all on port B
-// #define LINE_A 2 
-// #define LINE_B 3 
-// #define LINE_C 4 
-// #define LINE_D 5 
+#define LINE_A 0 // LED 4 common / Pin 5 on ATtiny85 / Pin 14 on an ATmega328 (D8)
+#define LINE_B 1 // LED 1 common / Pin 6 on ATtiny85 / Pin 15 on an ATmega328 (D9) 
+#define LINE_C 3 // LED 3 common / Pin 2 on ATtiny85 / Pin 17 on an ATmega328 (D11)
+#define LINE_D 4 // LED 2 common / Pin 3 on ATtiny85 / Pin 18 on an ATmega328 (D12)
 
 #include <avr/io.h>
 #include <avr/sleep.h>
