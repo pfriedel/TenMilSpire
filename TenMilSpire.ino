@@ -1,6 +1,7 @@
 // Tiny85 versioned - ATmega requires these defines to be redone as well as the
 // DDRB/PORTB calls later on.
 
+// Because I tend to forget - the number here is the Port B pin in use.  Pin 5 is PB0, Pin 6 is PB1, etc.
 #define LINE_A 0 //Pin 5 on ATtiny85
 #define LINE_B 1 //Pin 6 on ATtiny85
 #define LINE_C 3 //Pin 2 on ATtiny85
@@ -13,10 +14,22 @@
 // #define LINE_D 5 
 
 #include <avr/io.h>
+#include <avr/sleep.h>
+#include <avr/power.h>
 #include <EEPROM.h>
 
-#define MAX_MODE 4
+// How many modes do we want to go through?
+#define MAX_MODE 11
+// How long should I draw each color on each LED?
 #define DRAW_TIME 5
+
+#define BODS 7 // Location of the brown-out disable switch in the MCU Control Register
+#define BODSE 2 // Location of the Brown-out disable switch enable bit in the MCU Control Register
+
+#define time_multiplier 60000 // change the base for the time statement - right now it's 1 minute
+#define short_run 30
+#define medium_run 240 // 4 hours
+#define long_run 480 // 8 hours
 
 byte last_mode;
 
@@ -58,99 +71,168 @@ void loop() {
   // and go into the modes
 
   switch(last_mode) {
-    // random colors on random LEDs.
   case 0:
-    while(1) {
-      setLedColorHSV(random(4),random(360), 1, 1);
-      draw_for_time(1000);
-    }
+    // random colors on random LEDs.
+    // ~15-120mA depending on which LEDs are lit.
+    RandomColorRandomPosition(short_run);
     break;
-    // downward flowing rainbow inspired from the shiftPWM library example
+  case 1: 
+    // downward flowing rainbow inspired from the shiftPWM library example.
     // this walks through hue space at a constant saturation and brightness
-  case 1: {
-    uint8_t width = random(16,20);
-    while(1) {
-      for(uint16_t colorshift=0; colorshift<360; colorshift++) {
-	for(uint8_t led = 0; led<4; led++) {
-	  uint16_t hue = ((led) * 360/(width)+colorshift)%360;
-	  setLedColorHSV(led,hue,1,1);
-	  draw_for_time(DRAW_TIME);
-	}
-      }
-    }
+    // 14-18mA depending on which LEDs are lit.
+    HueWalk(short_run);
     break;
-  }
-    // upward flowing rainbow
-  case 2: {
-    uint8_t width = random(16,20);
-    while(1) {
-      for(uint16_t colorshift=360; colorshift>=0; colorshift--) {
-	for(uint8_t led = 0; led<4; led++) {
-	  uint16_t hue = ((led) * 360/(width)+colorshift)%360;
-	  setLedColorHSV(led,hue,1,1);
-	  draw_for_time(DRAW_TIME);
-	}
-      }
-    }
-    break;
-  }
+  case 2: 
     // Walk through brightness values across all hues.
     // this walks through brightnesses, slowly shifting hues.
-  case 3: {
-    uint16_t hue = random(360); // initial color
-    uint8_t led_val[4] = {1,9,17,25}; // some initial distances
-    bool led_dir[4] = {1,1,1,1}; // everything is initially going towards higher brightnesses
-    while(1) {
+    // 10-14mA depending on which LEDs are lit
+    BrightnessWalk(short_run);
+    break;
+  case 3:
+    // One LED at a time, PWM up to full brightness and back down again.
+    // 9-10mA depending on which LEDs are lit
+    PrimaryColors(short_run);
+    break;
+  case 4:
+    RandomColorRandomPosition(medium_run);
+    break;
+  case 5:
+    HueWalk(medium_run);
+    break;
+  case 6:
+    BrightnessWalk(medium_run);
+    break;
+  case 7:
+    PrimaryColors(medium_run);
+    break;
+  case 8:
+    RandomColorRandomPosition(long_run);
+    break;
+  case 9:
+    HueWalk(long_run);
+    break;
+  case 10:
+    BrightnessWalk(long_run);
+    break;
+  case 11:
+    PrimaryColors(long_run);
+    break;
+  }
+}
+
+void SleepNow(void) {
+  
+  // I don't think this matters in my circuit, but it doesn't hurt either - my
+  // meter can't actually read the low current mode it goes in to when BOD is
+  // disabled.
+  pinMode(0, OUTPUT);
+  pinMode(1, OUTPUT);
+  pinMode(3, OUTPUT);
+  pinMode(4, OUTPUT);
+  digitalWrite(0, HIGH);
+  digitalWrite(1, HIGH);
+  digitalWrite(3, HIGH);
+  digitalWrite(4, HIGH);
+
+  // attempt to re-enter the same mode that was running before I reset.
+  last_mode--;
+
+  // last_mode is type byte, so when it rolls below 0, it will become a Very
+  // Large Number compared to MAX_MODE.  Set it to MAX_MODE and the setup
+  // routine will jump it up and down by one.
+  if(last_mode > MAX_MODE) { last_mode = MAX_MODE; }
+
+  EESaveSettings();
+
+  // Important power management stuff follows
+  ADCSRA &= ~(1<<ADEN); // turn off the ADC
+  ACSR |= _BV(ACD);     // disable the analog comparator
+  MCUCR |= _BV(BODS) | _BV(BODSE); // turn off the brown-out detector
+
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN); // do a complete power down
+  sleep_enable(); // enable sleep mode
+  sei();  // allow interrupts to end sleep mode
+  sleep_cpu(); // go to sleep
+  delay(500);
+  sleep_disable(); // disable sleep mode for safety
+}
+  
+void RandomColorRandomPosition(uint16_t time) {
+  while(1) {
+    setLedColorHSV(random(4),random(360), 1, 1);
+    draw_for_time(1000);
+    if(millis() >= time*time_multiplier) { SleepNow(); }
+  }
+}
+
+void HueWalk(uint16_t time) {
+  uint8_t width = random(16,20);
+  while(1) {
+    for(uint16_t colorshift=0; colorshift<360; colorshift++) {
       for(uint8_t led = 0; led<4; led++) {
-	setLedColorHSV(led,hue,1,led_val[led]*.01);
+	uint16_t hue = ((led) * 360/(width)+colorshift)%360;
+	setLedColorHSV(led,hue,1,1);
 	draw_for_time(DRAW_TIME);
-	// if the current value for the current LED is about to exceed the top or the bottom, invert that LED's direction
-	if((led_val[led] >= 99) or (led_val[led] <= 0)) { 
-	  led_dir[led] = !led_dir[led]; 
-	  hue++; // actually increments hue by the number of LEDs (4) as each LED goes through 99 or 0, but 360 is a loooong way from here.
-	  if(hue >= 360) { 
-	    hue = 0;
-	  }
-	}
-	if(led_dir[led] == 1) { 
-	  led_val[led]++; 
-	}
-	else { 
-	  led_val[led]--; 
-	}
+	if(millis() >= time*time_multiplier) { SleepNow(); }
       }
     }
-    break;
   }
-    // One LED at a time, PWM up to full brightness and back down again.
-  case 4: {
-    uint8_t led_bright = 1;
-    bool led_dir = 1;
-    uint8_t led = 0;
-    while(1) {
-      
-      // flip the direction when the LED is at full brightness or no brightness.
-      if((led_bright >= 100) or (led_bright <= 0)) { led_dir = !led_dir; } 
-      
-      // increment or decrement the brightness
-      if(led_dir == 1) { led_bright++; }
-      else { led_bright--; }
-      
-      // if the decrement will turn off the current LED, switch to the next LED
-      if( led_bright <= 0 ) { led_grid[led] = 0; led++; }
+}
 
-      // And if that change pushes the current LED off the end of the spire, reset to the first LED.
-      if( led >=12) { led = 0; }
-      
-      led_grid[led] = led_bright;
+void BrightnessWalk(uint16_t time) {
+  uint16_t hue = random(360); // initial color
+  uint8_t led_val[4] = {1,9,17,25}; // some initial distances
+  bool led_dir[4] = {1,1,1,1}; // everything is initially going towards higher brightnesses
+  while(1) {
+    for(uint8_t led = 0; led<4; led++) {
+      if(millis() >= time*time_multiplier) { SleepNow(); }
+      setLedColorHSV(led,hue,1,led_val[led]*.01);
       draw_for_time(DRAW_TIME);
+      // if the current value for the current LED is about to exceed the top or the bottom, invert that LED's direction
+      if((led_val[led] >= 99) or (led_val[led] <= 0)) { 
+	led_dir[led] = !led_dir[led]; 
+	hue++; // actually increments hue by the number of LEDs (4) as each LED goes through 99 or 0, but 360 is a loooong way from here.
+	if(hue >= 360) { 
+	  hue = 0;
+	}
+      }
+      if(led_dir[led] == 1) { 
+	led_val[led]++; 
+      }
+      else { 
+	led_val[led]--; 
+      }
     }
-    break;
   }
+}
+
+void PrimaryColors(uint16_t time) {
+  uint8_t led_bright = 1;
+  bool led_dir = 1;
+  uint8_t led = 0;
+  while(1) {
+    if(millis() >= time*time_multiplier) { SleepNow(); }
+    
+    // flip the direction when the LED is at full brightness or no brightness.
+    if((led_bright >= 100) or (led_bright <= 0)) { led_dir = !led_dir; } 
+    
+    // increment or decrement the brightness
+    if(led_dir == 1) { led_bright++; }
+    else { led_bright--; }
+    
+    // if the decrement will turn off the current LED, switch to the next LED
+    if( led_bright <= 0 ) { led_grid[led] = 0; led++; }
+    
+    // And if that change pushes the current LED off the end of the spire, reset to the first LED.
+    if( led >=12) { led = 0; }
+    
+    led_grid[led] = led_bright;
+    draw_for_time(DRAW_TIME);
   }
 }
 
 
+// to-do: Convert this to integer mode.
 void setLedColorHSV(uint8_t p, uint16_t h, float s, float v) {
   // Lightly adapted from http://eduardofv.com/read_post/179-Arduino-RGB-LED-HSV-Color-Wheel-
   //this is the algorithm to convert from HSV to RGB
